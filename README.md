@@ -26,68 +26,68 @@ Recommended *** Save or copy the zipped file to the path /var/www/html/ and unzi
 
 Your /var/www/html/infocall/ directory structure should look like this (essential files and folders listed):  
 
-/var/www/html/infocall/                                                                                                                                                   
-├── app.py
-├── app_state.py
-├── .env                  (**Future and highly recommended** for environment variables, but currently in config.py ***DO NOT RUN PUBLIC FACING*** )
-├── install-infocall.sh   (Main installation script)
-├── infocall_db_structure.sql
-├── requirements.txt
-├── wsgi.py
-├── 00-setup-environment.sh
-├── 01-system-setup.sh
-├── 02-database-setup.sh
-├── 03-asterisk-setup.sh
-├── 04-apache-setup.sh
-├── 05-finalize-setup.sh
-├── dialin_ivr_install/   (Contains install_ivr.sh, dialin_ivr.agi, and Sound_files/)
-│   ├── install_ivr.sh
-│   ├── dialin_ivr.agi
-│   └── Sound_files/      (Place your IVR audio files here, e.g., welcome_ivr.wav)
-├── models/               (Contains Python database models)
-│   ├── __init__.py
-│   ├── announcement.py
-│   ├── app_setting.py
-│   ├── call.py
-│   ├── group.py
-│   ├── member.py
-│   ├── sms.py
-│   └── user.py
-├── routes/               (Contains Flask route definitions)
-│   ├── __init__.py
-│   ├── auth_routes.py
-│   ├── call_routes.py
-│   ├── member_routes.py
-│   └── sms_routes.py
-├── services/             (Contains business logic and external integrations)
-│   ├── asterisk_service.py
-│   ├── call_service.py
-│   ├── sms_service.py
-│   └── twilio_service.py
-├── static/               (Contains CSS, JavaScript, and other static assets)
-│   ├── emergency.css
-│   └── styles.css
-├── templates/            (Contains HTML Jinja2 templates)
-│   ├── admin_settings.html
-│   ├── ann_upload.html
-│   ├── base.html
-│   ├── call_mem.html
-│   ├── create_account.html
-│   ├── dashboard.html
-│   ├── execute_call.html
-│   ├── execute_sms.html
-│   ├── group_management.html
-│   ├── login.html
-│   ├── main_menu.html
-│   ├── member_dir.html
-│   ├── sms_mem.html
-│   ├── view_scheduled_calls.html
-│   └── view_scheduled_sms.html
-└── utils/                (Contains utility functions)
-    ├── db.py
-    ├── file_utils.py
-    ├── security.py
-    └── validation.py                                                                                                                                                    
+    /var/www/html/infocall/                                                                                                                                                   
+    ├── app.py
+    ├── app_state.py
+    ├── .env                  (**Future and highly recommended** for environment variables, but currently in config.py ***DO NOT RUN PUBLIC FACING*** )
+    ├── install-infocall.sh   (Main installation script)
+    ├── infocall_db_structure.sql
+    ├── requirements.txt
+    ├── wsgi.py
+    ├── 00-setup-environment.sh
+    ├── 01-system-setup.sh
+    ├── 02-database-setup.sh
+    ├── 03-asterisk-setup.sh
+    ├── 04-apache-setup.sh
+    ├── 05-finalize-setup.sh
+    ├── dialin_ivr_install/   (Contains install_ivr.sh, dialin_ivr.agi, and Sound_files/)
+    │   ├── install_ivr.sh
+    │   ├── dialin_ivr.agi
+    │   └── Sound_files/      (Place your IVR audio files here, e.g., welcome_ivr.wav)
+    ├── models/               (Contains Python database models)
+    │   ├── __init__.py
+    │   ├── announcement.py
+    │   ├── app_setting.py
+    │   ├── call.py
+    │   ├── group.py
+    │   ├── member.py
+    │   ├── sms.py
+    │   └── user.py
+    ├── routes/               (Contains Flask route definitions)
+    │   ├── __init__.py
+    │   ├── auth_routes.py
+    │   ├── call_routes.py
+    │   ├── member_routes.py
+    │   └── sms_routes.py
+    ├── services/             (Contains business logic and external integrations)
+    │   ├── asterisk_service.py
+    │   ├── call_service.py
+    │   ├── sms_service.py
+    │   └── twilio_service.py
+    ├── static/               (Contains CSS, JavaScript, and other static assets)
+    │   ├── emergency.css
+    │   └── styles.css
+    ├── templates/            (Contains HTML Jinja2 templates)
+    │   ├── admin_settings.html
+    │   ├── ann_upload.html
+    │   ├── base.html
+    │   ├── call_mem.html
+    │   ├── create_account.html
+    │   ├── dashboard.html
+    │   ├── execute_call.html
+    │   ├── execute_sms.html
+    │   ├── group_management.html
+    │   ├── login.html
+    │   ├── main_menu.html
+    │   ├── member_dir.html
+    │   ├── sms_mem.html
+    │   ├── view_scheduled_calls.html
+    │   └── view_scheduled_sms.html
+    └── utils/                (Contains utility functions)
+        ├── db.py
+        ├── file_utils.py
+        ├── security.py
+        └── validation.py                                                                                                                                                    
 
 Installation Steps
     
