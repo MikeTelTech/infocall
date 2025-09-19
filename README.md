@@ -143,7 +143,7 @@ Option 1: Modify Apache to Listen on Port 5000 (*** I believe I have this fixed 
     N/A Edit /etc/apache2/ports.conf: Ensure Apache is configured to Listen 5000. You might need to add Listen 5000 if it's not present.
     N/A Firewall: You will also need to open port 5000 in your server's firewall (e.g., Travelin' Man 3) for external access.
 
-N/A Option 2: Run Flask Directly (Advanced) (*** This should not be necessary!) 
-N/A This involves bypassing the Apache/WSGI setup entirely and running the Flask application with a production-ready WSGI server (like Gunicorn or uWSGI)
-N/A configured to listen on port 5000, and managing it with a process manager like Systemd. This approach is outside the scope of the provided installation
-N/A scripts and requires significant manual configuration.
+    N/A Option 2: Run Flask Directly (Advanced) (*** This should not be necessary!) 
+    N/A This involves bypassing the Apache/WSGI setup entirely and running the Flask application with a production-ready WSGI server (like Gunicorn or uWSGI)
+    N/A configured to listen on port 5000, and managing it with a process manager like Systemd. This approach is outside the scope of the provided installation
+    N/A scripts and requires significant manual configuration.
