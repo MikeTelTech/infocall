@@ -1,0 +1,224 @@
+
+import sys
+import os
+import traceback # Import traceback module
+
+# --- Add project directory to path ---
+# Ensure this path is correct for your server setup
+project_home = '/var/www/html/infocall'
+sys.stderr.write("AGI DEBUG: Script started\n")
+sys.stderr.flush()
+if project_home not in sys.path:
+    sys.path.insert(0, project_home)
+    sys.stderr.write(f"AGI DEBUG: Added {project_home} to sys.path\n")
+    sys.stderr.flush()
+
+# --- Necessary Imports ---
+sys.stderr.write("AGI DEBUG: Attempting imports...\n")
+sys.stderr.flush()
+imports_ok = False # Default to False
+try:
+    from asterisk.agi import AGI
+    import mysql.connector
+    from config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+    imports_ok = True
+    sys.stderr.write("AGI DEBUG: Imports OK\n")
+    sys.stderr.flush()
+except ImportError as import_err:
+    # Should not happen now, but keep for safety
+    sys.stderr.write(f"CRITICAL AGI IMPORT ERROR: {import_err}\n")
+    sys.stderr.flush()
+    imports_ok = False
+except Exception as general_import_err:
+    sys.stderr.write(f"CRITICAL GENERAL IMPORT ERROR: {general_import_err}\n")
+    traceback.print_exc(file=sys.stderr)
+    sys.stderr.flush()
+    imports_ok = False
+
+# --- AGI Initialization ---
+agi = None # Initialize agi to None
+if imports_ok:
+    sys.stderr.write("AGI DEBUG: Attempting AGI init...\n")
+    sys.stderr.flush()
+    try:
+        agi = AGI()
+        sys.stderr.write("AGI DEBUG: AGI init OK\n")
+        sys.stderr.flush()
+        # This first verbose line is key - check if it appears now
+        agi.verbose("AGI Interface Initialized Successfully.", 3)
+    except Exception as agi_init_e:
+        sys.stderr.write(f"CRITICAL ERROR: Failed to initialize AGI object: {agi_init_e}\n")
+        traceback.print_exc(file=sys.stderr)
+        sys.stderr.flush()
+        imports_ok = False # Ensure we don't proceed if AGI init failed
+else:
+    sys.stderr.write("AGI DEBUG: Exiting due to import failure.\n")
+    sys.stderr.flush()
+    sys.exit(1) # Exit if imports failed
+
+# --- Main Script Logic ---
+if imports_ok and agi: # Check if agi object was successfully created
+    sys.stderr.write("AGI DEBUG: Inside main logic block\n")
+    sys.stderr.flush()
+    agi.verbose("===== IVR Lookup AGI Script Started =====", 3)
+
+    connection = None
+    auth_status = "NOTFOUND" # Default status
+    db_connection_status = "UNKNOWN" # New variable for DB connection status
+
+    try:
+        # Get phone number from argument
+        if len(sys.argv) > 1:
+            raw_phone_number = sys.argv[1]
+            sys.stderr.write(f"AGI DEBUG: Received raw phone: {raw_phone_number}\n")
+            sys.stderr.flush()
+            agi.verbose(f"Received raw phone number argument: '{raw_phone_number}'", 3)
+
+            # *** ADDED: Strip +1 if present for DB lookup ***
+            if raw_phone_number.startswith('+1') and len(raw_phone_number) == 12:
+                phone_number = raw_phone_number[2:] # Get digits after +1
+                sys.stderr.write(f"AGI DEBUG: Stripped number: {phone_number}\n")
+                sys.stderr.flush()
+                agi.verbose(f"Stripped '+1', using number for DB lookup: '{phone_number}'", 3)
+            else:
+                # Use the number as-is if not in +1XXXXXXXXXX format
+                phone_number = raw_phone_number
+                sys.stderr.write(f"AGI DEBUG: Using number as-is: {phone_number}\n")
+                sys.stderr.flush()
+            agi.verbose(f"Final lookup number for DB: '{phone_number}'", 3) # Enhanced logging for final lookup number
+        else:
+            sys.stderr.write("AGI DEBUG: ERROR - No phone number argument received.\n")
+            sys.stderr.flush()
+            agi.verbose("ERROR: No phone number argument received.", 1)
+            agi.set_variable('AUTH_STATUS', 'ERROR_NO_ARG')
+            agi.verbose("Setting AUTH_STATUS to ERROR_NO_ARG.", 1)
+            agi.set_variable('DB_CONNECTION_STATUS', 'N/A') # Set DB status for no arg case
+            sys.exit(1)
+
+        # Database connection parameters
+        db_config = {
+            'host': DB_HOST,
+            'user': DB_USER,
+            'password': DB_PASSWORD,
+            'database': DB_NAME
+        }
+        sys.stderr.write("AGI DEBUG: Attempting DB connection\n")
+        sys.stderr.flush()
+        agi.verbose(f"Attempting DB connection to host: {DB_HOST}, db: {DB_NAME}, user: {DB_USER}", 3)
+
+        # Connect using 'with'
+        with mysql.connector.connect(**db_config) as connection:
+            sys.stderr.write("AGI DEBUG: DB Connected\n")
+            sys.stderr.flush()
+            agi.verbose("Database connection successful.", 3)
+            agi.set_variable('DB_CONNECTION_STATUS', 'SUCCESS') # Set DB connection success variable
+            db_connection_status = 'SUCCESS'
+
+            # Create cursor using 'with'
+            with connection.cursor(dictionary=True) as cursor:
+                sys.stderr.write("AGI DEBUG: DB Cursor created\n")
+                sys.stderr.flush()
+                agi.verbose("Database cursor created.", 3)
+
+                query = "SELECT id, ivr_passcode_hash FROM users WHERE phone_number = %s"
+                sys.stderr.write(f"AGI DEBUG: Executing DB query with param: '{phone_number}'\n")
+                sys.stderr.flush()
+                agi.verbose(f"Executing SQL query: {query} with param: '{phone_number}'", 3) # Uses the potentially modified phone_number
+
+                cursor.execute(query, (phone_number,))
+                sys.stderr.write("AGI DEBUG: Query executed.\n")
+                sys.stderr.flush()
+                agi.verbose("Query executed.", 3)
+
+                result = cursor.fetchone()
+                sys.stderr.write(f"AGI DEBUG: DB Result: {repr(result)}\n")
+                sys.stderr.flush()
+                # Log the raw result clearly
+                agi.verbose(f"Raw query result from fetchone(): {repr(result)}", 3)
+
+                if result:
+                    sys.stderr.write("AGI DEBUG: User found. Processing...\n")
+                    sys.stderr.flush()
+                    agi.verbose("User record FOUND in database.", 3)
+                    user_id = result.get('id')
+                    expected_hash = result.get('ivr_passcode_hash')
+
+                    if user_id is not None and expected_hash is not None:
+                        sys.stderr.write("AGI DEBUG: User ID and Hash found. Setting variables...\n")
+                        sys.stderr.flush()
+                        agi.verbose(f"Setting AUTH_STATUS to FOUND", 3)
+                        agi.set_variable('AUTH_STATUS', 'FOUND')
+                        agi.verbose(f"AUTH_STATUS set.", 3)
+
+                        agi.verbose(f"Setting AUTH_USER_ID to {user_id}", 3)
+                        agi.set_variable('AUTH_USER_ID', str(user_id))
+                        agi.verbose(f"AUTH_USER_ID set.", 3)
+
+                        agi.verbose(f"Setting EXPECTED_HASH (hash prefix: {expected_hash[:10]}...)", 3)
+                        agi.set_variable('EXPECTED_HASH', expected_hash)
+                        agi.verbose(f"EXPECTED_HASH set.", 3)
+
+                        auth_status = "FOUND"
+                        sys.stderr.write("AGI DEBUG: Variables set for FOUND user.\n")
+                        sys.stderr.flush()
+                    else:
+                        sys.stderr.write("AGI DEBUG: ERROR - Found record but missing 'id' or 'ivr_passcode_hash'.\n")
+                        sys.stderr.flush()
+                        agi.verbose("ERROR: Found record but missing 'id' or 'ivr_passcode_hash'. Check DB schema.", 1)
+                        agi.set_variable('AUTH_STATUS', 'ERROR_DB_SCHEMA')
+                        auth_status = "ERROR_DB_SCHEMA"
+                else:
+                    sys.stderr.write("AGI DEBUG: User not found. Setting variables...\n")
+                    sys.stderr.flush()
+                    agi.verbose(f"User record NOT FOUND for phone number: '{phone_number}'", 3)
+                    agi.set_variable('AUTH_STATUS', 'NOTFOUND')
+                    agi.verbose("Set AUTH_STATUS to NOTFOUND.", 3)
+                    auth_status = "NOTFOUND"
+                    sys.stderr.write("AGI DEBUG: Variables set for NOTFOUND user.\n")
+                    sys.stderr.flush()
+
+    except mysql.connector.Error as err:
+        sys.stderr.write(f"AGI DEBUG: DATABASE ERROR: {err}\n")
+        sys.stderr.flush()
+        agi.verbose(f"DATABASE ERROR: {err}", 1)
+        try:
+            agi.set_variable('AUTH_STATUS', 'DB_ERROR')
+            agi.verbose(f"Setting AUTH_STATUS to DB_ERROR due to DB exception.", 1)
+            agi.set_variable('DB_CONNECTION_STATUS', 'FAILED') # Set DB connection failure variable
+            db_connection_status = 'FAILED'
+        except Exception as set_var_err:
+             sys.stderr.write(f"AGI ERROR: Could not set DB_ERROR status: {set_var_err}\n")
+             sys.stderr.flush()
+        auth_status = "DB_ERROR"
+
+    except Exception as e:
+        sys.stderr.write(f"AGI DEBUG: UNEXPECTED AGI ERROR: {e}\nTraceback: {traceback.format_exc()}\n")
+        sys.stderr.flush()
+        try:
+            agi.verbose(f"UNEXPECTED AGI ERROR: {e}", 1)
+            agi.verbose(f"Traceback: {traceback.format_exc()}", 3)
+            agi.set_variable('AUTH_STATUS', 'AGI_ERROR')
+            agi.verbose(f"Setting AUTH_STATUS to AGI_ERROR due to exception.", 1)
+            agi.set_variable('DB_CONNECTION_STATUS', 'FAILED') # Set DB connection failure variable
+            db_connection_status = 'FAILED'
+        except Exception as log_err:
+            sys.stderr.write(f"AGI ERROR: Unexpected error: {e}. Failed to log via AGI: {log_err}\n")
+            sys.stderr.flush()
+        auth_status = "AGI_ERROR"
+
+    finally:
+        # 'with' statements handle cursor and connection closing
+        sys.stderr.write(f"AGI DEBUG: Script finishing. Final status determined as: {auth_status}. DB Connection Status: {db_connection_status}\n")
+        sys.stderr.flush()
+        agi.verbose(f"AGI script finished. Final AUTH_STATUS determined as: {auth_status}. DB Connection Status: {db_connection_status}", 3) # Log final DB status
+        agi.verbose("===== IVR Lookup AGI Script Ended =====", 3)
+
+# End if imports_ok and agi block
+elif not imports_ok:
+    sys.stderr.write("AGI DEBUG: Exiting at end due to earlier import/init failure.\n")
+    sys.stderr.flush()
+    sys.exit(1) # Ensure exit with error if imports failed earlier
+
+# Script exits implicitly if imports_ok was True and logic completed
+sys.stderr.write("AGI DEBUG: Script reached end.\n")
+sys.stderr.flush()

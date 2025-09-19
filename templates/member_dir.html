@@ -1,0 +1,399 @@
+{#/templates/member_dir.html #}
+{% extends "base.html" %}
+
+{% block title %}Member Directory{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    {# Your existing "Add New Member" glass-card #}
+    <div class="glass-card p-6 mb-8 {% if editing %}bg-yellow-100{% else %}glass-card-default-bg{% endif %}">
+        <h2 class="text-xl font-semibold mb-4">{% if editing %}Edit{% else %}Add New{% endif %} Member</h2>
+        <form method="POST" action="{{ url_for('member.member_dir') }}" id="memberForm">
+            <input type="hidden" name="action" value="{% if editing %}edit{% else %}add{% endif %}">
+            {% if editing %}
+            <input type="hidden" name="member_id" value="{{ member.id }}">
+            {% endif %}
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">First Name</label>
+                    <input type="text" name="first_name" required maxlength="35"
+                           value="{% if editing %}{{ member.first_name }}{% endif %}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-all duration-150">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Last Name</label>
+                    <input type="text" name="last_name" required maxlength="35"
+                           value="{% if editing %}{{ member.last_name }}{% endif %}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-all duration-150">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <input type="text" name="phone_number" id="phone_number" required maxlength="10"
+                           value="{% if editing %}{{ member.phone_number }}{% endif %}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-all duration-150">
+                    <p class="text-xs text-red-600 mt-1 hidden" id="phone-error-message">Emergency and service numbers (911, 411, 511) are not allowed.</p>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Groups</label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {% if all_groups %}
+                        {% for group in all_groups %}
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="groups[]" value="{{ group.id }}"
+                                {% if editing and member_groups and group.id|string in member_groups %}checked{% endif %}
+                                class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-150">
+                            <span class="ml-2">{{ group.name }}</span>
+                        </label>
+                        {% endfor %}
+                    {% else %}
+                        <p class="col-span-2 text-gray-500 italic">No groups available</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-6 flex space-x-2">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow-md transition duration-150 ease-in-out transform hover:-translate-y-1">
+                    {% if editing %}Update{% else %}Add{% endif %} Member
+                </button>
+                {% if editing %}
+                <a href="{{ url_for('member.member_dir') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow-md transition duration-150 ease-in-out transform hover:-translate-y-1 inline-block">
+                    Cancel
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    {# Your existing "Import/Export" glass-card #}
+    <div class="glass-card p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Import/Export</h2>
+        <div class="flex flex-wrap gap-4">
+            <form action="{{ url_for('member.upload_csv') }}" method="post" enctype="multipart/form-data" class="flex items-center space-x-2">
+                <div class="relative">
+                    <input type="file" name="file" id="file-upload" accept=".csv" required
+                           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                    <label for="file-upload" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        Choose CSV
+                    </label>
+                </div>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-150 ease-in-out transform hover:-translate-y-1">
+                    Import CSV
+                </button>
+            </form>
+
+            <a href="{{ url_for('member.export_csv') }}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition duration-150 ease-in-out transform hover:-translate-y-1">
+                Export CSV
+            </a>
+        </div>
+        <p class="text-sm text-gray-500 mt-2">
+            Import CSV format: First Name, Last Name, Phone Number, Groups (comma-separated)
+        </p>
+    </div>
+
+    {# Your existing "Member Directory (X members)" glass-card #}
+    <div class="glass-card p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Member Directory ({{ members|length }} members)</h2>
+        </div>
+
+        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div class="flex items-start">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm text-blue-500 mt-0.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-sm text-blue-800">
+                    <span class="font-medium">Note:</span> Duplicate records based on phone number are not allowed and will be dropped.
+                    Emergency and service numbers (911, 411, 511) are not allowed.
+                    {% if duplicate_message %}
+                    <br><span class="text-red-600 font-medium">{{ duplicate_message }}</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg relative" style="background-color: white;">
+            <div id="table-container" class="overflow-x-auto custom-scrollbar" style="max-height: 400px; overflow-y: auto; position: relative;">
+                <table class="min-w-full divide-y divide-gray-200 bg-white" style="border-collapse: separate; border-spacing: 0;">
+                    <thead class="bg-white sticky top-0 z-10">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b-2 border-gray-200">Name</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b-2 border-gray-200">Phone</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b-2 border-gray-200">Groups</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b-2 border-gray-200">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for member in members %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap border-b border-gray-100">
+                                <div class="text-sm font-medium text-gray-900">{{ member.last_name }}, {{ member.first_name }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap border-b border-gray-100">
+                                <div class="text-sm text-gray-500">{{ member.phone_number }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap border-b border-gray-100">
+                                <div class="flex flex-wrap gap-1">
+                                    {% if member.groups %}
+                                        {% for group in member.groups %}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 transition-all duration-150 hover:bg-blue-200">
+                                            {{ group.name }}
+                                        </span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-gray-400 italic">No Groups</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium border-b border-gray-100">
+                                <a href="{{ url_for('member.member_dir', action='edit', member_id=member.id) }}"
+                                   class="text-indigo-600 hover:text-indigo-900 mr-4 transition-colors duration-150">Edit</a>
+                                <button type="button" onclick="showDeleteMemberModal({{ member.id }})" class="text-red-600 hover:text-red-900 transition-colors duration-150">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-4 text-center text-gray-500 italic border-b border-gray-100">
+                                No members found. Add a new member using the form above.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 mr-1">
+                <div class="flex flex-col space-y-2">
+                    <button id="scroll-up" class="bg-gray-200 hover:bg-gray-300 rounded-full p-1 focus:outline-none shadow-md transition-all duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                    </button>
+                    <button id="scroll-down" class="bg-gray-200 hover:bg-gray-300 rounded-full p-1 focus:outline-none shadow-md transition-all duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div> {# This closes the glass-card p-6 for the table #}
+
+        {# --- PAGINATION BLOCK REMOVED --- #}
+        {# The entire {% if total_pages and total_pages > 1 %} block has been deleted from here #}
+
+    </div> {# This closes the container mx-auto px-4 py-8 #}
+
+    {# MOVE THE deleteMemberModal HERE: It must be inside a block to be rendered! #}
+    <div id="deleteMemberModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+                <h3 class="text-lg font-semibold mb-4">Confirm Deletion</h3>
+                <p class="mb-6">Are you sure you want to delete this member? This action cannot be undone.</p>
+                <div class="flex justify-end space-x-4">
+                    <button onclick="hideDeleteMemberModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded transition-colors duration-150">Cancel</button>
+                    <button onclick="confirmDeleteMember()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition-colors duration-150">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %} {# This closes the block content from base.html #}
+
+{# The extra_js block remains at the end for scripts #}
+{% block extra_js %}
+<script>
+    // Global function to show feedback messages (similar to Flask flashes but client-side)
+    function showMessage(message, isError = false) {
+        const flashContainer = document.querySelector('.flash-container');
+        if (!flashContainer) {
+            console.error('Flash container not found!');
+            return;
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flash-message ${isError ? 'flash-error' : 'flash-success'}`;
+        messageDiv.setAttribute('x-data', '{ show: true }');
+        messageDiv.setAttribute('x-show', 'show');
+        messageDiv.setAttribute('x-init', 'setTimeout(() => show = false, 5000)');
+        messageDiv.setAttribute('x-transition:leave', 'transition ease-in duration-300');
+        messageDiv.setAttribute('x-transition:leave-start', 'opacity-100');
+        messageDiv.setAttribute('x-transition:leave-end', 'opacity-0');
+
+        messageDiv.innerHTML = `
+            <span>${message}</span>
+            <button @click="show = false" class="flash-close-btn">
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        `;
+        flashContainer.appendChild(messageDiv);
+    }
+
+    let memberIdToDelete = null;
+
+    // The functions are now robustly defined on window scope and can be called directly
+    window.showDeleteMemberModal = function(memberId) {
+        memberIdToDelete = memberId;
+        console.log("showDeleteMemberModal called for member ID:", memberIdToDelete);
+        const deleteModal = document.getElementById('deleteMemberModal');
+        if (deleteModal) {
+            deleteModal.style.display = 'block';
+            console.log("Delete modal display set to block.");
+        } else {
+            console.error("CRITICAL ERROR: 'deleteMemberModal' element not found in DOM!");
+        }
+    };
+
+    window.hideDeleteMemberModal = function() {
+        memberIdToDelete = null;
+        const deleteModal = document.getElementById('deleteMemberModal');
+        if (deleteModal) {
+            deleteModal.style.display = 'none';
+        }
+    };
+
+    window.confirmDeleteMember = function() {
+        console.log("confirmDeleteMember called.");
+        if (memberIdToDelete !== null) {
+            console.log("memberIdToDelete is not null:", memberIdToDelete);
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for('member.member_dir') }}';
+
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = 'delete';
+            form.appendChild(actionInput);
+
+            const memberIdInput = document.createElement('input');
+            memberIdInput.type = 'hidden';
+            memberIdInput.name = 'member_id';
+            memberIdInput.value = memberIdToDelete;
+            form.appendChild(memberIdInput);
+
+            document.body.appendChild(form);
+            console.log("Form created and appended to body. Attempting submission.");
+            form.submit();
+        } else {
+            console.log("memberIdToDelete is null. Cannot submit form.");
+        }
+        hideDeleteMemberModal();
+    };
+
+
+    // --- START: Added Scroll-to-Top Logic ---
+    {% if editing %}
+        console.log("Edit mode detected, scrolling to top.");
+        window.scrollTo(0, 0);
+    {% endif %}
+    // --- END: Added Scroll-to-Top Logic ---
+
+
+    // Restricted phone numbers validation
+    const restrictedNumbers = ['911', '411', '511'];
+
+    function validatePhoneNumber() {
+        const phoneInput = document.getElementById('phone_number');
+        const phoneErrorMsg = document.getElementById('phone-error-message');
+        const value = phoneInput.value.replace(/\D/g, ''); // Get only digits
+
+        // Check for restricted numbers
+        for (const restricted of restrictedNumbers) {
+            if (value === restricted || value.startsWith(restricted)) {
+                phoneInput.classList.add('input-error');
+                phoneErrorMsg.textContent = `Emergency and service numbers (${restrictedNumbers.join(', ')}) are not allowed.`;
+                phoneErrorMsg.classList.remove('hidden');
+                showMessage(`Emergency and service numbers (${restrictedNumbers.join(', ')}) are not allowed.`, true);
+                return false;
+            }
+        }
+
+        // New length check for 4 or 10 digits
+        if (!(value.length === 4 || value.length === 10)) {
+            phoneInput.classList.add('input-error');
+            phoneErrorMsg.textContent = 'Phone number must be 4 or 10 digits.';
+            phoneErrorMsg.classList.remove('hidden');
+            showMessage('Phone number must be 4 or 10 digits.', true);
+            return false;
+        }
+
+        // Valid phone number
+        phoneInput.classList.remove('input-error');
+        phoneErrorMsg.classList.add('hidden');
+        return true;
+    }
+
+    // Add event listeners for phone validation (Ensure elements exist before adding listeners)
+    document.addEventListener('DOMContentLoaded', function() {
+        const phoneInput = document.getElementById('phone_number');
+        const phoneErrorMsg = document.getElementById('phone-error-message');
+        const memberForm = document.getElementById('memberForm');
+
+        if (phoneInput && phoneErrorMsg && memberForm) { // Check all elements needed for validation
+            phoneInput.addEventListener('blur', validatePhoneNumber);
+            phoneInput.addEventListener('input', validatePhoneNumber);
+
+            memberForm.addEventListener('submit', function(event) {
+                if (!validatePhoneNumber()) {
+                    event.preventDefault();
+                }
+            });
+        }
+    });
+
+
+    // Add hover animations to buttons (Ensure elements exist before adding listeners)
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableContainer = document.getElementById('table-container');
+        const scrollUpBtn = document.getElementById('scroll-up');
+        const scrollDownBtn = document.getElementById('scroll-down');
+
+        if (tableContainer && scrollUpBtn && scrollDownBtn) { // Check all elements needed for scrolling
+            [scrollUpBtn, scrollDownBtn].forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    this.querySelector('svg').classList.add('text-gray-900');
+                });
+
+                btn.addEventListener('mouseleave', function() {
+                    this.querySelector('svg').classList.remove('text-gray-900');
+                });
+            });
+
+            scrollUpBtn.addEventListener('click', function() {
+                tableContainer.scrollBy({
+                    top: -200,
+                    behavior: 'smooth'
+                });
+            });
+
+            scrollDownBtn.addEventListener('click', function() {
+                tableContainer.scrollBy({
+                    top: 200,
+                    behavior: 'smooth'
+                });
+            });
+        }
+    });
+
+    // Highlight the currently edited row if in edit mode (Ensure elements exist before adding listeners)
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if editing and member %}
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const editLink = row.querySelector(`a[href*="member_id={{ member.id }}"]`);
+            if (editLink) {
+                row.classList.add('bg-yellow-50');
+            }
+        });
+        {% endif %}
+    });
+
+</script>
+{% endblock %}

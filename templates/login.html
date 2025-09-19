@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Infocall Login{% endblock %}
+
+{% block content %}
+{# Custom styles previously in <head> - Consider moving to static/styles.css #}
+<style>
+    :root {
+        --primary-color: #4F46E5;
+        --primary-dark: #3730A3;
+        --secondary-color: #10B981;
+        --accent-color: #F59E0B;
+        --text-primary: #1F2937;
+        --text-secondary: #4B5563;
+        --gradient-start: #EBF4FF;
+        --gradient-end: #2563EB;
+    }
+
+    /* Ensure body takes full height for vertical centering if needed */
+    html, body {
+        height: 100%;
+    }
+
+    /* Apply flex centering to the direct parent of login-container if base.html doesn't already */
+    /* This style might be redundant if base.html's <main> or body handles centering */
+    .content-container { /* Assuming the block content goes into this */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        flex-grow: 1; /* Allow it to take available space */
+        padding: 2rem 1rem;
+    }
+
+    /* Enhanced glass-card effect */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px); /* For Safari */
+        border-radius: 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow:
+            0 8px 32px 0 rgba(31, 38, 135, 0.2),
+            0 2px 8px 0 rgba(31, 38, 135, 0.1);
+        transition: all 0.3s ease;
+        text-align: center; /* Center all text */
+    }
+
+    .glass-card:hover {
+        box-shadow:
+            0 10px 40px 0 rgba(31, 38, 135, 0.25),
+            0 3px 10px 0 rgba(31, 38, 135, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .flashes {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 20px;
+        width: 100%;
+    }
+
+    .flashes li {
+        background-color: #f44336;
+        color: white;
+        padding: 12px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        text-align: center;
+        font-size: 1.1rem;
+    }
+
+    /* Improved gradient text with animation */
+    .brand-gradient {
+        background: linear-gradient(45deg,
+            var(--primary-color) 0%,
+            #6366F1 25%,
+            var(--secondary-color) 50%,
+            #0EA5E9 75%,
+            var(--primary-color) 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gradient 8s linear infinite;
+    }
+
+    @keyframes gradient {
+        0% { background-position: 0% center; }
+        100% { background-position: 200% center; }
+    }
+
+    /* Container width is handled by Tailwind classes now */
+
+    /* Add zoom animation on load */
+    @keyframes zoomIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .animate-zoom {
+        animation: zoomIn 0.3s ease-out forwards;
+    }
+
+    /* Icon sizing classes */
+    .icon-sm {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+
+    .icon-md {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .icon-lg {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    /* Brand icon responsive sizing */
+    .brand-icon {
+        width: 5rem;
+        height: 5rem;
+        transition: all 0.3s ease;
+    }
+
+    @media (min-width: 1024px) {
+        .brand-icon {
+            width: 6rem;
+            height: 6rem;
+        }
+         .brand-title {
+            font-size: 3.5rem;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .brand-icon {
+            width: 4rem;
+            height: 4rem;
+        }
+        .brand-title {
+            font-size: 2.5rem;
+        }
+    }
+
+    /* Enhanced form inputs with animations */
+    input {
+        text-align: center;
+        font-size: 1.1rem !important;
+        height: 3.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(209, 213, 219, 0.8);
+    }
+
+    input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        transform: translateY(-1px);
+    }
+
+    /* Enhanced button with animation */
+    .submit-button {
+        height: 3.5rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background-image: linear-gradient(to right, var(--primary-color), #6366F1);
+    }
+
+    .submit-button:hover {
+        background-image: linear-gradient(to right, #4338CA, var(--primary-color));
+    }
+
+    .submit-button:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        transition: all 0.4s ease;
+    }
+
+    .submit-button:hover:before {
+        left: 100%;
+    }
+
+    /* Larger label text */
+    label {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+</style>
+
+{# Added max-w-md and mx-auto for width control and centering #}
+<div class="login-container max-w-md mx-auto animate-zoom w-full">
+    <div class="glass-card p-10 w-full">
+        <div class="text-center mb-8">
+            <div class="flex justify-center mb-5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="brand-icon text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                </svg>
+            </div>
+            <h1 class="brand-title text-5xl font-extrabold brand-gradient">InfoCall</h1>
+            <p class="text-gray-600 mt-3 text-xl">Sign in to your account</p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="space-y-8">
+            <div>
+                <label for="email" class="block font-medium text-gray-700">Email</label>
+                <div class="mt-2">
+                    <input type="email" name="email" id="email" required
+                           class="appearance-none block w-full px-4 py-4 border border-gray-300 rounded-lg shadow-sm
+                                  placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="you@example.com">
+                </div>
+            </div>
+
+            <div>
+                <label for="password" class="block font-medium text-gray-700">Password</label>
+                <div class="mt-2">
+                    <input type="password" name="password" id="password" required
+                           class="appearance-none block w-full px-4 py-4 border border-gray-300 rounded-lg shadow-sm
+                                  placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="••••••••">
+                </div>
+            </div>
+
+            <div>
+                <button type="submit"
+                        class="submit-button w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md
+                               text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none
+                               focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out
+                               transform hover:-translate-y-1">
+                    Sign in
+                </button>
+            </div>
+        </form>
+
+        {# --- REMOVED Create Account Link --- #}
+        {#
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                Don't have an account?
+                <a href="{{ url_for('auth.create_account') }}" class="font-medium text-indigo-600 hover:text-indigo-500 transition duration-150">
+                    Create one
+                </a>
+            </p>
+        </div>
+         #}
+         {# --- END REMOVED --- #}
+    </div>
+</div>
+{% endblock %}

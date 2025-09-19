@@ -1,0 +1,34 @@
+Managing the IPtables Linux Firewall
+
+As installed, Incredible PBX includes a preconfigured, locked-down Linux firewall that restricts incoming IPv6 traffic to localhost
+and, via a Travelin’ Man 3 WhiteList application, limits incoming IPv4 traffic to your server’s public and private IP addresses, your
+desktop computer’s IP address (that was used for the install), private LAN and NeoRouter VPN traffic, and a collection of our favorite
+VoIP providers. You can WhiteList additional IP addresses for additional providers or for SIP and IAX phones located outside your firewall.
+The following firewall management scripts are accessible from the /root directory:
+
+    ./add-ip — WhiteList an additional IP address or IP address range (CIDR)
+    ./add-fqdn — WhiteList a site using a fully-qualified domain name (FQDN)
+    ./del-acct — Remove previously designated entry from the WhiteList
+    ./ipchecker — Check whether specified FQDNs have changed & update IPtables
+    iptables-restart — Used exclusively to restart IPtables and test for failed FQDNs
+    iptables -nL — Check the current status of your IPtables firewall
+
+IPtables can be manually configured (if you know what you’re doing) by editing iptables and ip6tables in /etc/sysconfig. 
+Additional IPtables rules are included and managed in /usr/local/sbin/iptables-custom. NEVER use traditional iptables commands 
+such as iptables save to update your IPtables configuration, or you will permanently delete all of your FQDN entries! Instead,
+use the provided utilities to whitelist additional sites and then restart IPtables using iptables-restart. This protects the
+FQDN entries in your setup while also checking for invalid FQDN entries and removing them temporarily so that IPtables will
+successfully restart. If you use service iptables restart to restart IPtables and there happens to be an FQDN entry for a 
+host that is either down or has disappeared, IPtables will fail to restart and your server will be left with NO firewall 
+protection! Using the traditional IPtables mechanisms also will disable Fail2Ban. Incredible PBX periodically checks for changed
+FQDN entries using the ipchecker script configured in /etc/crontab.
+
+If you elect to integrate Facebook into your Incredible PBX setup, you will need to manually uncomment the last 3 lines in
+ /usr/local/sbin/iptables-custom in order to whitelist the Facebook servers. Then restart the firewall: iptables-restart
+
+WARNING: By default, Incredible PBX whitelists all of the non-routable LAN subnets including 10.0.0.0/8, 172.16.0.0/12, 
+and 192.168.0.0/16. If you elect to install Incredible PBX in the Amazon Cloud, be advised that Amazon treats the 172.16.0.0/12 
+subnet as routable IP addresses. This means that anyone in the Amazon Cloud (including the bad guys) will have direct access to 
+your server. While they still need a password or vulnerability to gain access, it nevertheless exposes your server to needless 
+hacking attempts. We strongly recommend that you comment out the 172.16.0.0/12 entry in /usr/local/sbin/iptables-custom if you 
+intend to deploy your server in the Amazon Cloud. Then restart the firewall: iptables-restart

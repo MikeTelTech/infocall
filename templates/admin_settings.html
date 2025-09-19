@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Settings | InfoCall{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Admin Settings</h1>
+        <p class="text-gray-600">Manage global application settings.</p>
+    </div>
+
+    {# Flash messages display area #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                    {# Use category for styling if defined in your CSS #}
+                    <div class="p-4 rounded-md {% if category == 'error' %}bg-red-100 border-l-4 border-red-500 text-red-700{% elif category == 'success' %}bg-green-100 border-l-4 border-green-500 text-green-700{% else %}bg-blue-100 border-l-4 border-blue-500 text-blue-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="glass-card p-6">
+        <form method="POST" action="{{ url_for('auth.admin_settings') }}" class="space-y-6">
+            <fieldset>
+                <legend class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">IVR Settings</legend>
+
+                <div class="relative flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="enable_auto_schedule"
+                               name="enable_auto_schedule"
+                               type="checkbox"
+                               value="true" {# Value sent when checked #}
+                               {% if ivr_auto_schedule_enabled %}checked{% endif %} {# Check based on variable from route #}
+                               class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition duration-150 ease-in-out cursor-pointer">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="enable_auto_schedule" class="font-medium text-gray-700 cursor-pointer">Enable Auto-Scheduling for IVR Recordings</label>
+                        <p class="text-gray-500">If checked, announcements successfully saved via the IVR dial-in feature will be automatically scheduled for a call campaign to 'All Members' 15 minutes after being saved.</p>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="pt-4">
+                <button type="submit"
+                        class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-150 transform hover:-translate-y-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Save Settings
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

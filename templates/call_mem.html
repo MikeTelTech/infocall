@@ -1,0 +1,393 @@
+{# PythonProject1/templates/call_mem.html #}
+{% extends "base.html" %}
+
+{% block title %}Schedule Call | InfoCall{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Schedule Announcement Call</h1>
+        <p class="text-gray-600">Set up automated calls to your member groups</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="glass-card p-6 lg:col-span-2">
+            <form method="POST" action="{{ url_for('call.call_mem') }}" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="announcement">
+                        Select Announcement
+                    </label>
+                    <select name="announcement_id" id="announcement" required
+                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-150">
+                        <option value="">-- Select an announcement --</option>
+                        {% for announcement in announcements %}
+                        <option value="{{ announcement.id }}">{{ announcement.filename }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: none;">
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="caller_id_name">
+                        Caller ID Name (max 15 characters)
+                    </label>
+                    <input type="text"
+                           id="caller_id_name"
+                           name="caller_id_name"
+                           maxlength="15"
+                           value="InfoCall"
+                           pattern="[A-Za-z0-9\. ]+"
+                           title="Only letters, numbers, spaces, and periods allowed"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-150">
+                    <p class="mt-1 text-xs text-gray-500">Only letters, numbers, spaces, and periods allowed. Max 15 characters.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="group">
+                        Target Group
+                    </label>
+                    <select name="group" id="group"
+                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-150">
+                        <option value="all">All Members</option>
+                        {% for group in groups %}
+                        <option value="{{ group.id }}">{{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2" for="scheduled_date">
+                            Date
+                        </label>
+                        <input type="date"
+                               id="scheduled_date"
+                               name="scheduled_date"
+                               required
+                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-150">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Time
+                        </label>
+                        <div class="flex space-x-2">
+                            <select id="scheduled_hour"
+                                    class="mt-1 block w-1/3 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-150">
+                                {% for i in range(1, 13) %}
+                                    <option value="{{ i }}">{{ '%02d'|format(i) }}</option>
+                                {% endfor %}
+                            </select>
+
+                            <span class="mt-1 flex items-center">:</span>
+
+                            <select id="scheduled_minute"
+                                    class="mt-1 block w-1/3 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-150">
+                                {% for i in range(0, 60, 5) %}
+                                    <option value="{{ i }}">{{ '%02d'|format(i) }}</option>
+                                {% endfor %}
+                            </select>
+
+                            <select id="scheduled_ampm"
+                                    class="mt-1 block w-1/3 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-all duration-150">
+                                <option value="AM">AM</option>
+                                <option value="PM">PM</option>
+                            </select>
+
+                            <input type="hidden" id="scheduled_time" name="scheduled_time" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit"
+                            class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-150 transform hover:-translate-y-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Schedule Call
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="lg:col-span-1">
+            <div class="glass-card p-6 mb-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">About Call Scheduling</h2>
+                <ul class="space-y-3 text-sm text-gray-600">
+                    <li class="flex">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm text-green-500 mr-2 flex-shrink-0 transition-transform hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Select an audio announcement to be played when members answer</span>
+                    </li>
+                    <li class="flex">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm text-green-500 mr-2 flex-shrink-0 transition-transform hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Choose a specific group or call all members</span>
+                    </li>
+                    <li class="flex">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm text-green-500 mr-2 flex-shrink-0 transition-transform hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Schedule the call for a future date and time</span>
+                    </li>
+                    <li class="flex">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm text-green-500 mr-2 flex-shrink-0 transition-transform hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>The system will automatically initiate calls at the scheduled time</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="glass-card p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
+                <div class="space-y-3">
+                    <a href="{{ url_for('call.view_scheduled_calls') }}" class="block w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150 transform hover:-translate-y-1 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        </svg>
+                        View Scheduled Calls
+                    </a>
+                    <a href="{{ url_for('call.ann_upload') }}" class="block w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-600 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-150 transform hover:-translate-y-1 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                        Upload New Announcement
+                    </a>
+                    <a href="{{ url_for('member.member_dir') }}" class="block w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-600 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-150 transform hover:-translate-y-1 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Manage Members
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Enhanced glass card */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow:
+            0 8px 32px 0 rgba(31, 38, 135, 0.1),
+            0 2px 8px 0 rgba(31, 38, 135, 0.05);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+        box-shadow:
+            0 10px 40px 0 rgba(31, 38, 135, 0.15),
+            0 3px 10px 0 rgba(31, 38, 135, 0.1);
+    }
+
+    /* Form styling */
+    input, select {
+        transition: all 0.3s ease;
+    }
+
+    input:focus, select:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Animated list items */
+    li {
+        transition: transform 0.2s ease;
+    }
+
+    li:hover {
+        transform: translateX(2px);
+    }
+
+    /* Button animations */
+    button, a {
+        transition: all 0.3s ease;
+    }
+
+    /* Checkmark icons animation */
+    li:hover svg {
+        transform: scale(1.2);
+        color: #059669;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        input, select {
+            font-size: 16px; /* Prevents iOS zoom */
+        }
+
+        .space-y-3 > * {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get date and time elements
+        const dateInput = document.getElementById('scheduled_date');
+        const hourSelect = document.getElementById('scheduled_hour');
+        const minuteSelect = document.getElementById('scheduled_minute');
+        const ampmSelect = document.getElementById('scheduled_ampm');
+        const timeInput = document.getElementById('scheduled_time');
+
+        // Get current date using the client's timezone
+        const now = new Date();
+
+        // Format today's date in YYYY-MM-DD for the date input
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+
+        // Set minimum date to today and default value
+        dateInput.min = todayStr;
+        dateInput.value = todayStr;
+
+        // Set default time to current hour + 1 (in 12-hour format)
+        let nextHour = new Date(now);
+        nextHour.setHours(nextHour.getHours() + 1, 0, 0);
+
+        // Convert to 12-hour format
+        let hours24 = nextHour.getHours();
+        let hours12 = hours24 % 12;
+        hours12 = hours12 ? hours12 : 12; // Convert 0 to 12
+        const ampm = hours24 >= 12 ? 'PM' : 'AM';
+
+        // Set default values for time selectors
+        hourSelect.value = hours12;
+        minuteSelect.value = "0"; // Need to use string to match option values
+        ampmSelect.value = ampm;
+
+        // Function to update hidden time input
+        function updateTimeInput() {
+            let hour12 = parseInt(hourSelect.value);
+            let minutes = parseInt(minuteSelect.value);
+            let ampm = ampmSelect.value;
+
+            // Convert to 24-hour format
+            let hour24 = hour12;
+            if (ampm === 'PM' && hour12 < 12) {
+                hour24 = hour12 + 12;
+            } else if (ampm === 'AM' && hour12 === 12) {
+                hour24 = 0;
+            }
+
+            // Format and set the hidden input value
+            const timeValue = `${hour24.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            timeInput.value = timeValue;
+        }
+
+        // Update the hidden input on initial load
+        updateTimeInput();
+
+        // Add event listeners to update the hidden input when selections change
+        hourSelect.addEventListener('change', updateTimeInput);
+        minuteSelect.addEventListener('change', updateTimeInput);
+        ampmSelect.addEventListener('change', updateTimeInput);
+
+        // Add form submit validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            // Ensure the hidden time input is updated with current values
+            updateTimeInput(); // Assumes this function correctly sets timeInput.value
+
+            // Get selected date and time values from the form
+            const selectedDateValue = dateInput.value; // e.g., "2025-04-19"
+            const selectedTimeValue = timeInput.value; // e.g., "13:00" (from hidden input)
+
+            // Basic check if values exist
+            if (!selectedDateValue || !selectedTimeValue) {
+                console.error("Could not retrieve date or time values from form.");
+                alert("Error processing date/time. Please check selections.");
+                event.preventDefault();
+                return false;
+            }
+
+            // Construct the selected datetime object using local time
+            let selectedDate;
+            try {
+                 // Use the 'T' separator for better ISO 8601 compliance
+                 selectedDate = new Date(`${selectedDateValue}T${selectedTimeValue}:00`);
+                 if (isNaN(selectedDate.getTime())) { // Check if the date is valid
+                     throw new Error("Invalid date/time constructed.");
+                 }
+            } catch (e) {
+                 console.error("Error constructing selected date:", e);
+                 alert("Invalid date or time format selected. Please check your input.");
+                 event.preventDefault();
+                 return false;
+            }
+
+            // Get current date & time (local)
+            const currentDateTime = new Date();
+
+            // --- Simplified Local Date Comparison ---
+            // Compare Year, Month, and Day components directly in local time
+            const isToday = selectedDate.getFullYear() === currentDateTime.getFullYear() &&
+                            selectedDate.getMonth() === currentDateTime.getMonth() &&
+                            selectedDate.getDate() === currentDateTime.getDate();
+            // --- End Simplified Local Date Comparison ---
+
+            // Debugging logs (optional, can be removed later)
+            console.log("Current DateTime (Local):", currentDateTime.toString());
+            console.log("Selected DateTime (Local):", selectedDate.toString()); // Log local string representation
+            console.log("Is Today:", isToday);
+            console.log("Comparison (Selected < Current):", selectedDate < currentDateTime);
+
+            // Perform the time check ONLY if the selected date IS today
+            if (isToday && selectedDate < currentDateTime) {
+                // This alert should now ONLY show if isToday is true AND the time is in the past
+                alert('For today, please select a time in the future.');
+                console.log("Validation failed: Selected time is in the past for today.");
+                event.preventDefault(); // Stop form submission
+                return false; // Explicitly return false
+            }
+
+            // If validation passes, the form will submit naturally.
+            console.log("Client-side validation passed.");
+            // No need for return true; default behavior is to submit if not prevented.
+        });
+
+        // Add hover effects to list items
+        const listItems = document.querySelectorAll('li.flex');
+        listItems.forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                const svg = this.querySelector('svg');
+                if (svg) svg.classList.add('text-green-600');
+            });
+
+            item.addEventListener('mouseleave', function() {
+                const svg = this.querySelector('svg');
+                if (svg) svg.classList.remove('text-green-600');
+            });
+        });
+
+        // Add validation for caller ID name (even though element is hidden)
+        const callerIdInput = document.getElementById('caller_id_name');
+        if (callerIdInput) {
+            callerIdInput.addEventListener('input', function() {
+                // Remove any special characters in real-time, but allow periods
+                this.value = this.value.replace(/[^A-Za-z0-9\. ]/g, '');
+
+                // Update character count
+                const remainingChars = 15 - this.value.length;
+                const helpText = this.nextElementSibling;
+                if (helpText) {
+                    helpText.textContent = `Only letters, numbers, spaces, and periods allowed. ${remainingChars} characters remaining.`;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

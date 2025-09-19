@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About InfoCall</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-900">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-6">About InfoCall</h1>
+
+        <p class="mb-4">
+            InfoCall is an automated call and SMS management software application designed to run on the same machine (localhost) as Incredible PBX.
+            It leverages Asterisk PBX, FreePBX, and iptables for secure communication management.
+        </p>
+
+        <h2 class="text-2xl font-semibold mb-4">Copyright and Licensing</h2>
+        <p class="mb-4">
+            &copy; 2025 InfoCall. All rights reserved.
+        </p>
+        <p class="mb-4">
+            This software is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+        </p>
+        <p class="mb-4">
+            This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+        </p>
+        <p class="mb-6">
+            You should have received a copy of the GNU Affero General Public License along with this program. If not, see <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" class="text-blue-600 hover:underline">https://www.gnu.org/licenses/agpl-3.0.html</a>.
+        </p>
+
+        <h2 class="text-2xl font-semibold mb-4">Source Code</h2>
+        <p class="mb-4">
+            The source code for InfoCall is available at <a href="http://www.infocall.tel" target="_blank" class="text-blue-600 hover:underline">www.infocall.tel</a>.
+        </p>
+
+        <div class="mt-8">
+            <a href="{{ url_for('info.license_page') }}" class="text-blue-600 hover:underline mr-4">View Full AGPL License</a>
+            <a href="{{ url_for('auth.index') }}" class="text-blue-600 hover:underline">Back to Login</a>
+        </div>
+    </div>
+</body>
+</html>

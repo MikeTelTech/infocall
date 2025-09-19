@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Execute SMS Campaign</h1>
+
+    {% include 'includes/flash_messages.html' %}
+
+    {% if sms_info %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            SMS Campaign Details - ID: {{ sms_info.id }}
+            <span class="badge bg-secondary float-end">{{ sms_info.status | capitalize }}</span>
+        </div>
+        <div class="card-body">
+            <p><strong>Message:</strong> {{ sms_info.message_content }}</p>
+            <p><strong>From Number:</strong> {{ sms_info.source_phone_number }}</p>
+            <p><strong>Scheduled Time (Local):</strong> {{ sms_info.formatted_scheduled_datetime }}</p>
+            <p><strong>Target Group:</strong> {{ sms_info.group_filter }}</p>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            Campaign Progress
+        </div>
+        <div class="card-body">
+            <div class="row text-center mb-3">
+                <div class="col"><strong>Total Members:</strong> {{ sms_stats.total }}</div>
+                <div class="col"><strong>Sent:</strong> {{ sms_stats.sent }}</div>
+                <div class="col"><strong>Delivered:</strong> {{ sms_stats.delivered }}</div>
+                <div class="col"><strong>Failed:</strong> {{ sms_stats.failed }}</div>
+                <div class="col"><strong>Opted Out:</strong> {{ sms_stats.opted_out }}</div>
+                <div class="col"><strong>Pending:</strong> {{ sms_stats.pending }}</div>
+            </div>
+            <div class="progress mb-3">
+                <div class="progress-bar" role="progressbar" style="width: {{ sms_stats.progress_percent }}%;" aria-valuenow="{{ sms_stats.progress_percent }}" aria-valuemin="0" aria-valuemax="100">
+                    {{ sms_stats.progress_percent }}%
+                </div>
+            </div>
+            {% if is_completed %}
+                <p class="text-center text-success fw-bold">This SMS campaign has completed.</p>
+            {% else %}
+                <p class="text-center text-muted">Progress updates automatically. Do not close this window.</p>
+            {% endif %}
+            
+            <div class="d-flex justify-content-center mt-3">
+                {% if not is_completed %}
+                <button type="button" class="btn btn-danger me-2" onclick="abortSms({{ sms_id }})">Abort Campaign</button>
+                {% else %}
+                <button type="button" class="btn btn-success me-2" onclick="completeSmsSession({{ sms_id }})" {% if sms_info.status == 'completed' %} disabled {% endif %}>Mark Campaign Completed</button>
+                {% endif %}
+                <a href="{{ url_for('sms.view_scheduled_sms') }}" class="btn btn-secondary">Back to Scheduled SMS</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            Individual SMS Status
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>Phone Number</th>
+                            <th>Current Status</th>
+                            <th>Details</th>
+                            <th>Last Update Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="smsStatusTableBody">
+                        {% for member in members %}
+                        <tr id="member-{{ member.phone_number | replace('+', '') }}">
+                            <td>{{ member.phone_number }}</td>
+                            <td class="status-cell">{{ member.sms_status | default('pending') | capitalize }}</td>
+                            <td class="details-cell">{{ member.sms_details | default('-') }}</td>
+                            <td class="timestamp-cell">{{ member.sms_timestamp | default('-') }}</td>
+                            <td>
+                                {% if member.sms_status not in ['sent', 'delivered', 'failed', 'opted_out'] %}
+                                <button class="btn btn-sm btn-info" onclick="resetSmsStatus('{{ member.phone_number }}', {{ sms_id }})">Reset Status</button>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <p class="alert alert-warning">SMS campaign information not found.</p>
+    <a href="{{ url_for('sms.view_scheduled_sms') }}" class="btn btn-primary">Back to Scheduled SMS</a>
+    {% endif %}
+
+</div>
+
+<script>
+    const smsId = {{ sms_id }};
+    const isCompleted = {{ 'true' if is_completed else 'false' }};
+
+    function updateIndividualSmsStatus(phone, status, details, timestamp) {
+        const row = document.getElementById(`member-${phone.replace('+', '')}`);
+        if (row) {
+            row.querySelector('.status-cell').textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            row.querySelector('.details-cell').textContent = details || '-';
+            row.querySelector('.timestamp-cell').textContent = timestamp || '-';
+
+            // Re-enable/disable reset button based on new status
+            const resetButton = row.querySelector('.btn-info');
+            if (resetButton) {
+                if (['sent', 'delivered', 'failed', 'opted_out'].includes(status)) {
+                    resetButton.style.display = 'none';
+                } else {
+                    resetButton.style.display = 'inline-block';
+                }
+            }
+        }
+    }
+
+    function fetchBatchSmsStatus() {
+        if (isCompleted) {
+            console.log("Campaign is completed, stopping status updates.");
+            return;
+        }
+
+        const phoneNumbers = [];
+        document.querySelectorAll('#smsStatusTableBody tr').forEach(row => {
+            const phoneNumber = row.querySelector('td:first-child').textContent;
+            phoneNumbers.push(phoneNumber);
+        });
+
+        fetch(`/api/batch_sms_status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ phone_numbers: phoneNumbers, campaign_id: smsId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let total = 0, sent = 0, delivered = 0, failed = 0, opted_out = 0, pending = 0;
+                
+                for (const phone in data.results) {
+                    const statusData = data.results[phone];
+                    updateIndividualSmsStatus(phone, statusData.status, statusData.details, statusData.timestamp);
+                    total++;
+
+                    const currentStatus = statusData.status;
+                    if (currentStatus && currentStatus !== 'pending' && currentStatus !== 'waiting' && currentStatus !== 'unknown' && currentStatus !== 'queued') {
+                        if (currentStatus === 'sent') { sent++; }
+                        else if (currentStatus === 'delivered') { delivered++; }
+                        else if (currentStatus === 'failed') { failed++; }
+                        else if (currentStatus === 'opted_out') { opted_out++; }
+                    } else {
+                        pending++;
+                    }
+                }
+                // Recalculate totals including delivered, failed, opted_out to count as "processed"
+                const processed = sent + delivered + failed + opted_out;
+                const progressPercent = total > 0 ? Math.round((processed / total) * 100) : 0;
+
+                // Update summary stats
+                document.querySelector('.card-body .row .col:nth-child(1) strong').textContent = `Total Members: ${total}`;
+                document.querySelector('.card-body .row .col:nth-child(2) strong').textContent = `Sent: ${sent}`;
+                document.querySelector('.card-body .row .col:nth-child(3) strong').textContent = `Delivered: ${delivered}`;
+                document.querySelector('.card-body .row .col:nth-child(4) strong').textContent = `Failed: ${failed}`;
+                document.querySelector('.card-body .row .col:nth-child(5) strong').textContent = `Opted Out: ${opted_out}`;
+                document.querySelector('.card-body .row .col:nth-child(6) strong').textContent = `Pending: ${pending}`;
+                
+                const progressBar = document.querySelector('.progress-bar');
+                progressBar.style.width = `${progressPercent}%`;
+                progressBar.setAttribute('aria-valuenow', progressPercent);
+                progressBar.textContent = `${progressPercent}%`;
+
+                if (data.session_progress) {
+                    const sessionStatusBadge = document.querySelector('.card-header.bg-primary .badge');
+                    sessionStatusBadge.textContent = data.session_progress.status.charAt(0).toUpperCase() + data.session_progress.status.slice(1);
+
+                    if (data.session_progress.status === 'completed' || data.session_progress.status === 'cancelled' || data.session_progress.status === 'failed' || data.session_progress.status === 'completed_with_errors') {
+                        // All calls completed or campaign cancelled/failed
+                        document.querySelector('.card-body .text-center.text-success').textContent = "This SMS campaign has completed.";
+                        document.querySelector('.card-body .text-center.text-muted').style.display = 'none';
+                        document.querySelector('button[onclick="abortSms(' + smsId + ')"]').style.display = 'none';
+                        document.querySelector('button[onclick="completeSmsSession(' + smsId + ')"]').style.display = 'inline-block';
+                        isCompleted = true; // Update JS variable
+                        console.log("SMS Campaign completed. Stopping periodic updates.");
+                    }
+                }
+
+                // Continue polling if not completed
+                if (!isCompleted) {
+                    setTimeout(fetchBatchSmsStatus, 5000); // Poll every 5 seconds
+                }
+
+            } else {
+                console.error("Failed to fetch batch SMS status:", data.message);
+                // Optionally show a flash message or handle error gracefully
+                if (!isCompleted) { setTimeout(fetchBatchSmsStatus, 5000); } // Keep trying
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching batch SMS status:", error);
+            if (!isCompleted) { setTimeout(fetchBatchSmsStatus, 5000); } // Keep trying
+        });
+    }
+
+    function resetSmsStatus(phoneNumber, campaignId) {
+        fetch(`/api/sms_status/${phoneNumber}?campaign_id=${campaignId}&reset=1`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateIndividualSmsStatus(phoneNumber, data.status, data.details, data.timestamp);
+                    console.log(`Status for ${phoneNumber} reset to ${data.status}.`);
+                    // Trigger a full batch update to refresh overall stats immediately
+                    fetchBatchSmsStatus(); 
+                } else {
+                    console.error("Failed to reset SMS status:", data.message);
+                    alert("Failed to reset SMS status: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Error resetting SMS status:", error);
+                alert("Error resetting SMS status. See console for details.");
+            });
+    }
+
+    function abortSms(campaignId) {
+        if (confirm("Are you sure you want to abort this SMS campaign? This will stop all pending messages.")) {
+            fetch(`/api/abort_sms/${campaignId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    // Force a full refresh or redirect to view_scheduled_sms after abort
+                    window.location.reload(); 
+                } else {
+                    alert("Error aborting SMS campaign: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Error aborting SMS campaign:", error);
+                alert("Error aborting SMS campaign. See console for details.");
+            });
+        }
+    }
+
+    function completeSmsSession(campaignId) {
+        if (confirm("Are you sure you want to manually mark this SMS campaign as completed? This will finalize its status.")) {
+            fetch(`/api/complete_sms_session/${campaignId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload(); // Reload to show updated status
+                } else {
+                    alert("Error marking SMS campaign completed: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Error marking SMS campaign completed:", error);
+                alert("Error marking SMS campaign completed. See console for details.");
+            });
+        }
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Only start polling if the campaign is not yet completed/cancelled
+        if (!isCompleted) {
+            fetchBatchSmsStatus();
+        } else {
+            console.log("Campaign already completed/cancelled. No polling initiated.");
+        }
+    });
+
+</script>
+{% endblock %}

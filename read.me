@@ -132,11 +132,7 @@ If you have a specific requirement to access the application on http://[Your_Ser
 
 Option 1: Modify Apache to Listen on Port 5000 (*** I believe I have this fixed in latest script and the app works under port 5000 leaving port 80 for the admin login to Incredible PBX)
           This should be working post-installation http://[Your_Server_IP_Address_or_Hostname]:5000
-          
-
-      -------------------- Below remains for reference ----------------------------------------
-          
-    N/A This involves changing the 04-apache-setup.sh script before running install-infocall.sh, and potentially modifying Apache's global ports.conf.
+ N/A This involves changing the 04-apache-setup.sh script before running install-infocall.sh, and potentially modifying Apache's global ports.conf.
 
     N/A Edit 04-apache-setup.sh: Change VirtualHost *:80 to VirtualHost *:5000 within the Apache configuration template.
     N/A Edit /etc/apache2/ports.conf: Ensure Apache is configured to Listen 5000. You might need to add Listen 5000 if it's not present.

@@ -1,0 +1,476 @@
+/* InfoCall Application Styles */
+
+/* Variables */
+:root {
+    --primary-color: #4F46E5;
+    --primary-dark: #3730A3;
+    --secondary-color: #10B981;
+    --accent-color: #F59E0B;
+    --text-primary: #1F2937;
+    --text-secondary: #4B5563;
+    --bg-light: #F9FAFB;
+    --bg-white: #FFFFFF;
+    --gradient-start: #EBF4FF;  /* Light blue */
+    --gradient-end: #2563EB;    /* Darker blue */
+}
+
+/* Custom Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Body Styling with Enhanced Gradient Background */
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg,
+        var(--gradient-start) 0%,
+        rgba(104, 149, 238, 0.85) 50%,
+        var(--gradient-end) 100%);
+    background-attachment: fixed;
+    background-size: cover;
+    color: var(--text-primary);
+    min-height: 100vh;
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+}
+
+/* Enhanced Glass Card Effect */
+.glass-card {
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For Safari */
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+        0 8px 32px 0 rgba(31, 38, 135, 0.2),
+        0 2px 8px 0 rgba(31, 38, 135, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* ADD this new rule */
+.glass-card-default-bg {
+    background-color: rgba(255, 255, 255, 0.85);
+}
+
+/* Ensure editing panel background override */
+.glass-card.bg-yellow-100 {
+    background-color: #FEF3C7 !important; /* Tailwind yellow-100 color */
+    /* You might need !important to override other specific styles */
+}
+
+.glass-card:hover {
+    box-shadow:
+        0 10px 40px 0 rgba(31, 38, 135, 0.25),
+        0 3px 10px 0 rgba(31, 38, 135, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Content Container */
+.content-container {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 1280px; /* Allow wider desktop views */
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 1rem;
+}
+
+/* Enhanced Buttons */
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    background-image: linear-gradient(to right, var(--primary-color), #6366F1);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    background-image: linear-gradient(to right, #4338CA, var(--primary-color));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.4s ease;
+}
+
+.btn-primary:hover:before {
+    left: 100%;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-secondary:hover {
+    background-color: #0DA271;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.4s ease;
+}
+
+.btn-secondary:hover:before {
+    left: 100%;
+}
+
+/* Navigation with improved hover effect */
+.nav-item {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.nav-item:after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.nav-item:hover:after {
+    width: 100%;
+}
+
+.nav-item.active:after {
+    width: 100%;
+}
+
+.nav-item.active {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* Improved Gradient Text with Animation */
+.brand-gradient {
+    background: linear-gradient(45deg,
+        var(--primary-color) 0%,
+        #6366F1 25%,
+        var(--secondary-color) 50%,
+        #0EA5E9 75%,
+        var(--primary-color) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient 8s linear infinite;
+}
+
+@keyframes gradient {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+}
+
+/* Flash Messages */
+.flashes {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.flashes li {
+    background-color: #f44336;
+    color: white;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+}
+
+
+/* Improved Form Elements */
+input:focus, select:focus, textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    transform: translateY(-1px);
+    transition: all 0.3s ease;
+}
+
+/* Card Hover Effects */
+.hover-card {
+    transition: all 0.3s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Status Tags with improved styling */
+.status-tag {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    transition: all 0.3s ease;
+}
+
+.status-tag:hover {
+    transform: translateY(-1px);
+}
+
+.status-pending {
+    background-color: #E5E7EB;
+    color: #4B5563;
+}
+
+.status-ready {
+    background-color: #FEF3C7;
+    color: #92400E;
+}
+
+.status-progress {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+}
+
+.status-completed {
+    background-color: #D1FAE5;
+    color: #065F46;
+}
+
+.status-error {
+    background-color: #FEE2E2;
+    color: #B91C1C;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-up {
+    animation: slideUp 0.5s ease-in-out;
+}
+
+/* Icon sizing classes */
+.icon-sm {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.icon-md {
+    width: 2rem;
+    height: 2rem;
+}
+
+.icon-lg {
+    width: 3rem;
+    height: 3rem;
+}
+
+.brand-icon {
+    width: 5rem;
+    height: 5rem;
+}
+
+/* Responsive icon sizing */
+@media (max-width: 768px) {
+    .brand-icon {
+        width: 4rem;
+        height: 4rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand-icon {
+        width: 3rem;
+        height: 3rem;
+    }
+}
+
+/* Tables with improved styling */
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px); /* For Safari */
+}
+
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.styled-table th {
+    background-color: rgba(249, 250, 251, 0.9);
+    padding: 0.75rem 1.5rem;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6B7280;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.styled-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #E5E7EB;
+    transition: all 0.2s ease;
+}
+
+.styled-table tr:hover td {
+    background-color: rgba(249, 250, 251, 0.7);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .styled-table th, .styled-table td {
+        padding: 0.5rem;
+    }
+
+    .container, .max-w-7xl, .max-w-6xl, .max-w-2xl, .max-w-md {
+        width: 100%;
+        max-width: 100%;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        box-sizing: border-box;
+    }
+
+    /* Ensure buttons stack properly on mobile */
+    button, .btn, a.btn, input[type="submit"] {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Improved mobile menu */
+.mobile-menu {
+    position: fixed;
+    top: 4rem;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px); /* For Safari */
+    padding: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease-in-out;
+    border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+.mobile-menu.open {
+    transform: translateY(0);
+}
+
+/* Info Cards with improved styling */
+.info-card {
+    border-left: 4px solid var(--primary-color);
+    background-color: rgba(238, 242, 255, 0.9);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.info-card:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.info-card.success {
+    border-left-color: var(--secondary-color);
+    background-color: rgba(236, 253, 245, 0.9);
+}
+
+.info-card.warning {
+    border-left-color: var(--accent-color);
+    background-color: rgba(255, 251, 235, 0.9);
+}
+
+.info-card.error {
+    border-left-color: #EF4444;
+    background-color: rgba(254, 242, 242, 0.9);
+}
+
+/* Enhanced Call progress indicator */
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(229, 231, 235, 0.5);
+    border-radius: 9999px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    border-radius: 9999px;
+    transition: width 0.5s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Typography responsive adjustments */
+@media (min-width: 1024px) {
+    h1 {
+        font-size: 2.25rem !important;
+    }
+
+    h2 {
+        font-size: 1.75rem !important;
+    }
+
+    p {
+        font-size: 1.125rem;
+    }
+
+    .p-6, .p-8, .px-6, .py-6, .px-8, .py-8 {
+        padding: 1.5rem !important;
+    }
+}
+
+@media (max-width: 640px) {
+    h1 {
+        font-size: 1.5rem !important;
+    }
+
+    h2 {
+        font-size: 1.25rem !important;
+    }
+
+    p {
+        font-size: 1rem;
+    }
+}

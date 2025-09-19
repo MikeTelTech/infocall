@@ -1,0 +1,476 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_completed %}View Call Results{% else %}Execute Call{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <div class="glass-card p-4 mb-4">
+        <h1 class="text-xl font-bold mb-3">
+            {% if is_completed %}
+            Call Results: {{ call_info.group_name }}
+            <span class="ml-2 px-2 py-1 text-xs rounded-full inline-block text-center"
+                  style="{% if call_info.status == 'completed' %}background-color: #10b981; color: white;
+                         {% else %}background-color: #ef4444; color: white;{% endif %}">
+                {{ call_info.status|title }}
+            </span>
+            {% else %}
+            Execute Call: {{ call_info.group_name }}
+            {% endif %}
+        </h1>
+
+        <table class="w-full mb-2" style="table-layout: fixed; border-collapse: collapse;">
+            <tr>
+                <td style="width: 30%;" class="border px-2 py-1">
+                    <strong class="text-sm">Announcement:</strong>
+                    <span class="text-sm ml-1">{{ call_info.filename }}</span>
+                </td>
+                <td style="width: 30%;" class="border px-2 py-1">
+                    <strong class="text-sm">Scheduled Time:</strong>
+                    <span class="text-sm ml-1">
+                        <span class="text-sm ml-1">{{ call_info.formatted_scheduled_datetime if call_info.formatted_scheduled_datetime else call_info.scheduled_datetime }}</span>
+                    </span>
+                </td>
+                <td style="width: 25%;" class="border px-2 py-1">
+                    <strong class="text-sm">Group:</strong>
+                    <span class="text-sm ml-1">{{ call_info.group_name }}</span>
+                </td>
+                <td style="width: 15%;" class="border px-2 py-1 text-center">
+                    <strong class="text-sm" id="progress-percent">{{ call_stats.progress_percent or 0 }}%</strong>
+                    <span class="text-sm block">Complete</span>
+                </td>
+            </tr>
+        </table>
+
+        <div class="w-full bg-gray-200 rounded-full h-4 mb-3">
+            <div id="progress-bar" class="bg-blue-500 h-4 rounded-full transition-all duration-300" style="width: {{ call_stats.progress_percent or 0 }}%;"></div>
+        </div>
+
+        <div class="flex flex-nowrap justify-between mb-2">
+            <div class="flex-1 text-center mx-1">
+                <div class="bg-gray-100 px-2 py-1 rounded inline-block min-w-16">
+                    <span class="text-xs text-gray-600">Total:</span>
+                    <span class="font-bold" id="total-calls">{{ call_stats.called or 0 }}</span>
+                </div>
+            </div>
+            <div class="flex-1 text-center mx-1">
+                <div class="bg-gray-100 px-2 py-1 rounded inline-block min-w-16">
+                    <span class="text-xs text-gray-600">Completed:</span>
+                    <span class="font-bold text-blue-600" id="completed-calls">{{ call_stats.completed or 0 }}</span>
+                </div>
+            </div>
+            <div class="flex-1 text-center mx-1">
+                <div class="bg-gray-100 px-2 py-1 rounded inline-block min-w-16">
+                    <span class="text-xs text-gray-600">Answered:</span>
+                    <span class="font-bold text-green-600" id="answered-calls">{{ call_stats.answered or 0 }}</span>
+                </div>
+            </div>
+            <div class="flex-1 text-center mx-1">
+                <div class="bg-gray-100 px-2 py-1 rounded inline-block min-w-16">
+                    <span class="text-xs text-gray-600">Opt-outs:</span>
+                    <span class="font-bold text-red-600" id="opted-out-calls">{{ call_stats.opted_out or 0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not is_completed %}
+    <div class="mb-4">
+        <table class="mb-2" style="border-collapse: separate; border-spacing: 5px 0;">
+            <tr>
+                <td>
+                    <button onclick="showAbortAllCallsModal()" style="background-color: #dc2626; color: white; padding: 8px 16px; border-radius: 4px; border: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="height: 16px; width: 16px; vertical-align: text-bottom;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Abort All Calls
+                    </button>
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% else %}
+    <div class="mb-4">
+        <a href="{{ url_for('call.view_scheduled_calls') }}" style="background-color: #4f46e5; color: white; padding: 8px 16px; border-radius: 4px; border: none; display: inline-block; text-decoration: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="height: 16px; width: 16px; vertical-align: text-bottom;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Return to Scheduled Calls
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="glass-card p-4 mb-4">
+        <h2 class="text-lg font-semibold mb-3">
+            {% if is_completed %}
+                Call Results for {{ members|length }} Members
+            {% else %}
+                Members to Call ({{ members|length }})
+            {% endif %}
+        </h2>
+
+        <div class="overflow-x-auto bg-white rounded-lg">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 text-gray-600 text-sm">
+                        <th class="py-2 px-3 text-left font-medium border-b">Name</th>
+                        <th class="py-2 px-3 text-left font-medium border-b">Phone</th>
+                        <th class="py-2 px-3 text-left font-medium border-b">Status</th>
+                        <th class="py-2 px-3 text-left font-medium border-b">Details</th>
+                        <th class="py-2 px-3 text-left font-medium border-b">Time</th>
+                    </tr>
+                </thead>
+                <tbody id="members-table">
+                    {% for member in members %}
+                    <tr data-phone="{{ member.phone_number }}" id="row-{{ member.phone_number }}"
+                        class="border-b hover:bg-gray-50 {% if member.call_status == 'opted_out' %}bg-red-50{% endif %}">
+                        <td class="py-2 px-3">{{ member.last_name }}, {{ member.first_name }}</td>
+                        <td class="py-2 px-3">{{ member.phone_number }}</td>
+                        <td class="py-2 px-3">
+                            <span id="status-{{ member.phone_number }}"
+                                class="px-2 py-1 text-xs rounded-full inline-block text-center"
+                                style="{% if member.call_status == 'pending' %}background-color: #f3f4f6; color: #4b5563;
+                                {% elif member.call_status == 'ringing' %}background-color: #fef3c7; color: #92400e;
+                                {% elif member.call_status == 'answered' %}background-color: #d1fae5; color: #065f46;
+                                {% elif member.call_status == 'completed' %}background-color: #dbeafe; color: #1e40af;
+                                {% elif member.call_status == 'dtmf_received' %}background-color: #e0e7ff; color: #4338ca;
+                                {% elif member.call_status == 'opted_out' %}background-color: #fee2e2; color: #b91c1c;
+                                {% else %}background-color: #f3f4f6; color: #4b5563;{% endif %}">
+                                {% if member.call_status == 'pending' %}Waiting
+                                {% elif member.call_status == 'opted_out' %}Opted Out
+                                {% elif member.call_status == 'dtmf_received' %}DTMF Input
+                                {% elif member.call_status %}{{ member.call_status|title }}
+                                {% else %}Waiting{% endif %}
+                            </span>
+                        </td>
+                        <td class="py-2 px-3" id="details-{{ member.phone_number }}">{{ member.call_details or '-' }}</td>
+                        <td class="py-2 px-3" id="timestamp-{{ member.phone_number }}">{{ member.call_timestamp or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="abortAllCallsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 class="text-lg font-semibold mb-4">Confirm Abort All Calls</h3>
+            <p class="mb-6">Are you sure you want to abort all active calls for this campaign? This will attempt to hang up ongoing calls.</p>
+            <div class="flex justify-end space-x-4">
+                <button onclick="hideAbortAllCallsModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded transition-colors duration-150">Cancel</button>
+                <button onclick="confirmAbortAllCalls()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition-colors duration-150">Abort Calls</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Global function to show feedback messages (similar to Flask flashes but client-side)
+    function showMessage(message, isError = false) {
+        const flashContainer = document.querySelector('.flash-container');
+        if (!flashContainer) {
+            console.error('Flash container not found!');
+            return;
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flash-message ${isError ? 'flash-error' : 'flash-success'}`;
+        messageDiv.setAttribute('x-data', '{ show: true }');
+        messageDiv.setAttribute('x-show', 'show');
+        messageDiv.setAttribute('x-init', 'setTimeout(() => show = false, 5000)');
+        messageDiv.setAttribute('x-transition:leave', 'transition ease-in duration-300');
+        messageDiv.setAttribute('x-transition:leave-start', 'opacity-100');
+        messageDiv.setAttribute('x-transition:leave-end', 'opacity-0');
+
+        messageDiv.innerHTML = `
+            <span>${message}</span>
+            <button @click="show = false" class="flash-close-btn">
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        `;
+        flashContainer.appendChild(messageDiv);
+        setTimeout(() => {
+            if (document.body.contains(messageDiv)) {
+                messageDiv.remove();
+            }
+        }, 8000);
+    }
+
+    // Status configuration with inline styles
+    const statusConfig = {
+        'waiting': { style: 'background-color: #f3f4f6; color: #4b5563;', text: 'Waiting' },
+        'dialing': { style: 'background-color: #dbeafe; color: #1e40af;', text: 'Dialing' },
+        'ringing': { style: 'background-color: #fef3c7; color: #92400e;', text: 'Ringing' },
+        'answered': { style: 'background-color: #d1fae5; color: #065f46;', text: 'Answered' },
+        'busy': { style: 'background-color: #fee2e2; color: #b91c1c;', text: 'Busy' },
+        'noanswer': { style: 'background-color: #ffedd5; color: #9a3412;', text: 'No Answer' },
+        'completed': { style: 'background-color: #dbeafe; color: #1e40af;', text: 'Completed' },
+        'rejected': { style: 'background-color: #fee2e2; color: #b91c1c;', text: 'Rejected' },
+        'dtmf_received': { style: 'background-color: #e0e7ff; color: #4338ca;', text: 'DTMF Input' },
+        'opted_out': { style: 'background-color: #fee2e2; color: #b91c1c;', text: 'Opted Out' },
+        'aborted': { style: 'background-color: #fee2e2; color: #b91c1c;', text: 'Aborted' }
+    };
+
+    // Check if we're in completed view mode
+    const isCompletedView = {% if is_completed %}true{% else %}false{% endif %};
+
+    // Get the campaign ID
+    const campaignId = {{ call_id }};
+
+    // Debug logging
+    console.log(`Execute Call: Campaign ID = ${campaignId}, Completed View = ${isCompletedView}`);
+
+    // If in completed view, we don't need to run the call status updates
+    if (isCompletedView) {
+        console.log("Viewing completed call - status updates disabled");
+    } else {
+        // Simple global state for active calls
+        let callsInProgress = 0;
+
+        const optedOutMembers = new Set();
+        {% for member in members %}
+            {% if member.call_status == 'opted_out' %}
+            optedOutMembers.add('{{ member.phone_number }}');
+            {% endif %}
+        {% endfor %}
+
+        // UI Functions
+        function updateStatusDisplay(phoneNumber, statusData) {
+            const statusElement = document.getElementById(`status-${phoneNumber}`);
+            const detailsElement = document.getElementById(`details-${phoneNumber}`);
+            const timestampElement = document.getElementById(`timestamp-${phoneNumber}`);
+
+            if (!statusElement) return;
+
+            const status = statusData.status || 'waiting';
+            const config = statusConfig[status] || statusConfig.waiting;
+
+            statusElement.style = config.style;
+            statusElement.textContent = config.text;
+
+            if (detailsElement && statusData.details) {
+                detailsElement.textContent = statusData.details;
+            }
+
+            if (timestampElement && statusData.timestamp) {
+                timestampElement.textContent = statusData.timestamp;
+            }
+        }
+
+        // Function to update the progress bar and statistics
+        function updateProgressStats(stats) {
+            // Update the progress bar
+            const progressBar = document.getElementById('progress-bar');
+            if (progressBar) {
+                progressBar.style.width = `${stats.progressPercent}%`;
+            }
+
+            // Update the progress percentage text
+            const progressPercent = document.getElementById('progress-percent');
+            if (progressPercent) {
+                progressPercent.textContent = `${stats.progressPercent}%`;
+            }
+
+            // Update the call statistics
+            document.getElementById('total-calls').textContent = stats.calledCount;
+            document.getElementById('completed-calls').textContent = stats.completedCount;
+            document.getElementById('answered-calls').textContent = stats.answeredCount;
+            document.getElementById('opted-out-calls').textContent = stats.optedOutCount;
+
+            // Debug log
+            console.log(`Updated stats: ${stats.calledCount}/${stats.totalMembers} (${stats.progressPercent}%)`);
+        }
+
+        // Improved batch update function that specifically uses the campaign ID
+        function batchUpdateCallStatus() {
+            const phoneNumbers = Array.from(document.querySelectorAll('[data-phone]'))
+                .map(row => row.getAttribute('data-phone'));
+
+            // Debug log - helpful for troubleshooting
+            console.log(`Updating status for ${phoneNumbers.length} phone numbers in campaign ${campaignId}`);
+
+            // Call the batch status API
+            fetch('/api/batch_call_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone_numbers: phoneNumbers,
+                    campaign_id: campaignId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.results) {
+                    // Process all results
+                    let calledCount = 0;
+                    let completedCount = 0;
+                    let answeredCount = 0;
+                    let optedOutCount = 0;
+
+                    Object.entries(data.results).forEach(([phoneNumber, statusData]) => {
+                        // Update UI for this phone number
+                        updateStatusDisplay(phoneNumber, statusData);
+
+                        // Count for statistics
+                        if (statusData.status && !['pending', 'waiting', 'unknown'].includes(statusData.status)) {
+                            calledCount++;
+
+                            if (statusData.status === 'completed') completedCount++;
+                            if (statusData.status === 'answered') answeredCount++;
+                            if (statusData.status === 'opted_out') optedOutCount++;
+                        }
+                    });
+
+                    // Calculate progress percentage
+                    const totalMembers = phoneNumbers.length;
+                    const progressPercent = Math.round((calledCount / totalMembers) * 100) || 0; 
+
+                    // Update UI with new statistics
+                    updateProgressStats({
+                        calledCount,
+                        completedCount,
+                        answeredCount,
+                        optedOutCount,
+                        totalMembers,
+                        progressPercent
+                    });
+                }
+            })
+            .catch(error => {
+                console.error(`Error in batch status update: ${error}`);
+                showMessage(`Error updating call statuses: ${error.message}`, true);
+            });
+        }
+
+        // Modal controls
+        function showAbortAllCallsModal() {
+            document.getElementById('abortAllCallsModal').style.display = 'block';
+        }
+
+        function hideAbortAllCallsModal() {
+            document.getElementById('abortAllCallsModal').style.display = 'none';
+        }
+
+        function confirmAbortAllCalls() {
+            hideAbortAllCallsModal();
+            console.log(`Attempting to abort calls for campaign ID: ${campaignId}`); // Added log
+            fetch(`/api/abort_calls/${campaignId}`, { // Ensure correct URL construction
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ campaign_id: campaignId })
+            })
+            .then(response => {
+                console.log('Abort calls fetch response received:', response); // Added log
+                if (!response.ok) {
+                    // If response is not OK (e.g., 400, 500), try to read error message from body
+                    return response.text().then(text => {
+                        throw new Error(`Server error: ${response.status} - ${text || response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Abort calls API response data:', data); // Added log
+                if (data.success) {
+                    showMessage(`Calls aborted: ${data.aborted_count} calls terminated.`);
+                    // Refresh the status display
+                    batchUpdateCallStatus();
+                } else {
+                    showMessage(`Error aborting calls: ${data.message}`, true);
+                }
+            })
+            .catch(error => {
+                console.error(`Error aborting calls: ${error}`);
+                showMessage(`Error aborting calls: ${error.message}`, true);
+            });
+        }
+
+        // Add this function definition above the initialization section
+        function detectStuckCalls() {
+            const phoneNumbers = Array.from(document.querySelectorAll('[data-phone]'))
+                .map(row => row.getAttribute('data-phone'));
+
+            phoneNumbers.forEach(phoneNumber => {
+                const statusElement = document.getElementById(`status-${phoneNumber}`);
+                const timestampElement = document.getElementById(`timestamp-${phoneNumber}`);
+
+                if (statusElement && timestampElement) {
+                    const currentStatusText = statusElement.textContent.trim();
+                    const timestampStr = timestampElement.textContent.trim();
+
+                    if (['Ringing', 'Dialing'].includes(currentStatusText) && timestampStr !== '-') {
+                        try {
+                            // Parse the timestamp, assuming it's in 'HH:MM:SS AM/PM' format
+                            // This matches the format used by `datetime.now(effective_timezone).strftime('%I:%M:%S %p')` in app.py
+                            const [timePart, ampmPart] = timestampStr.split(' ');
+                            let [hours, minutes, seconds] = timePart.split(':').map(Number);
+
+                            if (ampmPart === 'PM' && hours < 12) {
+                                hours += 12;
+                            } else if (ampmPart === 'AM' && hours === 12) {
+                                hours = 0; // Midnight (12 AM)
+                            }
+
+                            const callTime = new Date();
+                            callTime.setHours(hours, minutes, seconds, 0); // Set only time, date will be today
+
+                            const now = new Date();
+                            // If the call time is in the future relative to 'now', it means it's from yesterday
+                            if (callTime > now && (now.getHours() < 6)) { // If current hour is early morning, assume call was yesterday
+                                callTime.setDate(callTime.getDate() - 1);
+                            }
+
+                            const diffSeconds = (now - callTime) / 1000;
+
+                            // If call has been ringing/dialing for more than 60 seconds, mark as no answer/failed
+                            if (diffSeconds > 60) {
+                                console.log(`Call to ${phoneNumber} has been stuck in ${currentStatusText} for ${diffSeconds} seconds.`);
+
+                                // Update the status display (this is a client-side only update)
+                                updateStatusDisplay(phoneNumber, {
+                                    status: 'noanswer', // Or 'failed' depending on desired behavior for stuck calls
+                                    details: `Stuck (${currentStatusText}) timeout`,
+                                    timestamp: new Date().toLocaleTimeString()
+                                });
+                                showMessage(`Call to ${phoneNumber} timed out in ${currentStatusText} state.`, true);
+                            }
+                        } catch (e) {
+                            console.error(`Error parsing timestamp for ${phoneNumber}: ${timestampStr}, Error: ${e}`);
+                        }
+                    }
+                }
+            });
+        }
+
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log(`DOM loaded for campaign ${campaignId}`);
+
+            const memberRows = document.querySelectorAll('[data-phone]');
+            {% for member in members %}
+            const row_{{ member.id }} = document.querySelector('[data-phone="{{ member.phone_number }}"]');
+            if (row_{{ member.id }}) {
+                row_{{ member.id }}.setAttribute('data-member-id', '{{ member.id }}');
+            }
+            {% endfor %}
+
+            // Perform initial status check for all members
+            batchUpdateCallStatus();
+
+            // Set up regular status updates
+            const updateInterval = setInterval(batchUpdateCallStatus, 2000);
+
+            // Add the stuck call detection
+            const stuckDetectionInterval = setInterval(detectStuckCalls, 5000); // Check every 5 seconds
+
+            // Clean up interval when page is unloaded
+            window.addEventListener('beforeunload', function() {
+                clearInterval(updateInterval);
+                clearInterval(stuckDetectionInterval);
+            });
+        });
+    }
+</script>
+{% endblock %}

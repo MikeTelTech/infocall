@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+import sys
+import logging
+import bcrypt
+import traceback # Added for more detailed error logging
+
+# --- Configuration ---
+LOG_FILE = '/var/log/asterisk/infocall_agi.log'
+# --- End Configuration ---
+
+# --- Basic AGI Library (Manual Implementation - Copied) ---
+# Reads all environment variables passed by Asterisk
+env = {}
+while True:
+    line = sys.stdin.readline().strip()
+    if line == '':
+        break
+    try:
+        # Ensure splitting only happens if ':' is present
+        if ':' in line:
+            key, value = line.split(':', 1)
+            env[key.strip()] = value.strip()
+    except ValueError:
+        # Log malformed lines if necessary, but continue reading
+        # Using stderr here as logging might not be set up yet
+        sys.stderr.write(f"AGI WARNING: Malformed environment line ignored: {line}\n")
+        sys.stderr.flush()
+
+def agi_set_variable(name, value):
+    """ Sets an Asterisk channel variable """
+    try:
+        print(f'SET VARIABLE "{name}" "{value}"')
+        sys.stdout.flush() # Ensure command is sent
+        # Read response line from Asterisk to confirm command execution
+        response = sys.stdin.readline().strip()
+        # Optionally log response for debugging:
+        # logging.getLogger('check_passcode').debug(f'AGI SET VARIABLE response: {response}')
+    except Exception as e:
+        logging.getLogger('check_passcode').error(f"Failed to set AGI variable {name}: {e}")
+
+# Note: agi_verbose function using print won't integrate with Asterisk logging levels
+# It's better to use the Python logging module configured below for file logging
+# or the standard asterisk.agi library for console/Asterisk log integration.
+# def agi_verbose(message, level=1):
+#     print(f'VERBOSE "{message}" {level}')
+#     sys.stdout.flush()
+#     sys.stdin.readline()
+
+# --- End Basic AGI Library ---
+
+# --- Logging Setup ---
+# Use a unique logger name
+log = logging.getLogger('check_passcode')
+log.setLevel(logging.INFO) # Set desired level
+# Prevent adding multiple handlers if script is reloaded somehow
+if not log.handlers:
+    try:
+        handler = logging.FileHandler(LOG_FILE)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        log.addHandler(handler)
+    except Exception as log_e:
+        # If logger setup fails, write to stderr
+        sys.stderr.write(f"ERROR setting up logger for check_passcode: {log_e}\n")
+        sys.stderr.flush()
+# --- End Logging Setup ---
+
+# --- Main Script Logic ---
+if __name__ == "__main__":
+    # Use .get with default for safety, access via keys if confirmed present
+    entered_passcode = env.get('agi_arg_1', '')
+    expected_hash_str = env.get('agi_arg_2', '')
+    auth_result = "FAIL" # Default to fail
+
+    log.info("--- check_passcode.agi script started ---")
+    log.info(f"Received arguments - Entered Passcode Length: {len(entered_passcode)}, Hash Provided: {'Yes' if expected_hash_str else 'No'}")
+    # Avoid logging full hash unless necessary for debug, log prefix maybe
+    log.debug(f"Hash received (prefix): {expected_hash_str[:20]}...")
+
+    if not entered_passcode or not expected_hash_str:
+        log.error("Missing entered passcode or expected hash argument.")
+        auth_result = "ERROR_ARGS" # More specific error
+    else:
+        try:
+            # Encode inputs for bcrypt
+            entered_bytes = entered_passcode.encode('utf-8')
+            hash_bytes = expected_hash_str.encode('utf-8')
+
+            # Perform the comparison
+            log.info(f"Comparing entered '{entered_passcode}' with received hash.") # <-- ADDED LOG
+            check_result = bcrypt.checkpw(entered_bytes, hash_bytes)
+            log.info(f"Result of bcrypt.checkpw(): {check_result}") # <-- ADDED LOG (Logs True or False)
+
+            if check_result:
+                auth_result = "OK"
+                log.info("Passcode validation successful.")
+            else:
+                auth_result = "FAIL"
+                log.warning("Passcode validation FAILED (Incorrect Passcode).")
+
+        except ValueError as ve:
+             # This specific error usually means the hash string format is invalid
+             log.error(f"Invalid hash format encountered during passcode check: {ve}")
+             auth_result = "ERROR_HASH_FORMAT" # Indicate specific error
+        except ImportError:
+             log.critical("bcrypt library is not installed or importable!")
+             auth_result = "ERROR_IMPORT"
+        except Exception as e:
+             # Log the full exception traceback for unexpected errors
+             log.error(f"Unexpected error during bcrypt check: {e}", exc_info=True)
+             # traceback.print_exc(file=sys.stderr) # Optionally also print to stderr
+             auth_result = "ERROR_UNEXPECTED"
+
+    # Set channel variable for the dialplan
+    try:
+        log.info(f"Setting AUTH_RESULT channel variable to: {auth_result}")
+        agi_set_variable("AUTH_RESULT", auth_result)
+        log.info("AUTH_RESULT variable set.")
+    except Exception as e_setvar:
+        log.error(f"Failed to set AUTH_RESULT variable: {e_setvar}", exc_info=True)
+
+    log.info(f"--- check_passcode.agi script ending. Result: {auth_result} ---")
+    sys.exit(0) # Exit cleanly

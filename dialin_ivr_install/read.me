@@ -1,0 +1,67 @@
+# INFOCALL Dial-in IVR Installation Guide
+
+This directory contains the necessary files and scripts to install and configure the Dial-in IVR (Interactive Voice Response) feature for the INFOCALL Flask application.
+This IVR allows administrators to manage certain aspects of INFOCALL via a phone call, protected by a passcode.
+
+## Files in this Directory:
+
+* `install_ivr.sh`: The main Bash script responsible for automating the installation and configuration of the IVR feature within your Asterisk PBX.
+* `dialin_ivr.agi`: The Asterisk Gateway Interface (AGI) script written in Python that handles the actual logic and interaction of the IVR when a call is routed to it.
+* `Sound_files/` (Subdirectory): This directory is intended to hold your custom audio files for the IVR, such as welcome messages (`welcome_ivr.wav` or `welcome_ivr.gsm`).
+**It is crucial that this directory exists and contains your required sound files before running the installer.**
+
+## Installation Preparation:
+
+Before running the installation script, ensure the following prerequisites are met:
+
+1.  **INFOCALL Application Directory:** This `dialin_ivr_install` folder must be located within the root directory of your INFOCALL application (e.g.,
+ `/var/www/html/infocall/dialin_ivr_install/`). The main `install-infocall.sh` script (from the parent INFOCALL directory) typically handles placing this folder correctly.
+2.  **Ubuntu 22.04 & Incredible PBX 2027-U:** Your server should be running Ubuntu 22.04 with Incredible PBX 2027-U already installed and configured.
+3.  **Root Privileges:** The `install_ivr.sh` script requires root privileges to modify system configuration files and directories.
+4.  **Sound Files:** I have included sound files and the ivr installation will take care of moving and setting the Incredible PBX default owner and permissions.
+
+## Installation Steps:
+
+1.  **Navigate to the Directory:**
+    Open your terminal and navigate to this `dialin_ivr_install` directory:
+    ```bash
+    cd /var/www/html/infocall/dialin_ivr_install/
+    ```
+
+2.  **Make Script Executable:**
+    Ensure the installation script has executable permissions:
+    ```bash
+    sudo chmod +x install_ivr.sh
+    ```
+
+3.  **Run the Installation Script:**
+    Execute the script with root privileges:
+    ```bash
+    sudo ./install_ivr.sh
+    ```
+
+4.  **Follow Prompts:**
+    The script will prompt you to **"Enter the desired IVR extension number (3 to 7 digits):"**. Enter a unique extension number that is not currently in use within your Asterisk dialplan.
+
+## What the `install_ivr.sh` Script Does:
+
+The `install_ivr.sh` script performs the following actions:
+
+* **Modifies `extensions_custom.conf`**: It injects a new Asterisk dialplan context, `[infocall-dialin-ivr]`, into `/etc/asterisk/extensions_custom.conf`. This context defines the call
+ flow for the IVR, including answering, playing a welcome message, and executing the AGI script. It also ensures that the `[from-internal-custom]` context exists and includes the `infocall-dialin-ivr`
+  context, making the IVR reachable from internal extensions. [ uploaded:infocall_0602_113700/dialin_ivr_install/install_ivr.sh]
+* **Copies AGI Files**: It copies the `dialin_ivr.agi` script from this directory to the Asterisk AGI binary directory (`/var/lib/asterisk/agi-bin/`).
+ uploaded:infocall_0602_113700/dialin_ivr_install/install_ivr.sh]
+* **Copies Sound Files**: It copies all `.gsm`, `.wav`, or `.mp3` files found in the `Sound_files/` subdirectory to the Asterisk custom sounds directory
+(`/var/lib/asterisk/sounds/custom/`). [cite: uploaded:infocall_0602_113700/dialin_ivr_install/install_ivr.sh]
+* **Sets Permissions**: It sets the correct ownership (`asterisk:asterisk`) and permissions for the copied AGI scripts and sound files, ensuring Asterisk can execute and access them. [
+	uploaded:infocall_0602_113700/dialin_ivr_install/install_ivr.sh]
+* **Reloads Dialplan**: Finally, it reloads the Asterisk dialplan to apply all the changes made. [ uploaded:infocall_0602_113700/dialin_ivr_install/install_ivr.sh]
+
+## Post-Installation Notes:
+
+* **IVR Reachability**: After installation, ensure your primary inbound contexts in Asterisk (e.g., `from-internal` in `extensions.conf`) include `from-internal-custom` to allow calls to reach the IVR extension.
+* ** YOU NEED TO ADD A MISC Destination by using the Incredible PBX admin console.  Once you have logged in, click on Application, then Misc Destination.  Fill in the two blanks - 'Dial' is the number you entered
+	 When running the IVR installation script. (/var/www/html/infocall/dialin_ivr_install/install_ivr.sh) 
+* **Troubleshooting**: If you encounter issues, check the Asterisk full log (`/var/log/asterisk/full`) and the INFOCALL application logs (`/var/log/infocall/infocall.log`
+and potentially `/var/www/html/infocall/logs/infocall.log`) for errors.
