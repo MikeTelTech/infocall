@@ -1,2 +1,2 @@
 # infocall
-Call management for Churches and Civic groups - (future) Schedule event reminder calls and SMS msg in dev.
+Event call management for Churches and Civic groups (aka phonetree)  - (future) SMS msg
