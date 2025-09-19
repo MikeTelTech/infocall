@@ -26,7 +26,7 @@ Recommended *** Save or copy the zipped file to the path /var/www/html/ and unzi
 
 Your /var/www/html/infocall/ directory structure should look like this (essential files and folders listed):  
 
-/var/www/html/infocall/
+/var/www/html/infocall/                                                                                                                                                   
 ├── app.py
 ├── app_state.py
 ├── .env                  (**Future and highly recommended** for environment variables, but currently in config.py ***DO NOT RUN PUBLIC FACING*** )
@@ -87,7 +87,7 @@ Your /var/www/html/infocall/ directory structure should look like this (essentia
     ├── db.py
     ├── file_utils.py
     ├── security.py
-    └── validation.py
+    └── validation.py                                                                                                                                                    
 
 Installation Steps
     
