@@ -1,4 +1,4 @@
-﻿INFOCALL Flask Application Installation Guide
+﻿INFOCALL Flask Application Installation Guide 
 
 
 This guide provides instructions for installing the INFOCALL Flask application on an Ubuntu 22.04 server with Incredible PBX 2027-U. INFOCALL is designed for automated communication campaigns,
@@ -24,7 +24,7 @@ specifically naming the destination folder infocall.
 The recommended path for the application is /var/www/html/infocall/.
 Recommended *** Save or copy the zipped file to the path /var/www/html/ and unzip the file there will result in the files and subfolder in the correct path /var/www/html/infocall/   ***
 
-Your /var/www/html/infocall/ directory structure should look like this (essential files and folders listed):
+Your /var/www/html/infocall/ directory structure should look like this (essential files and folders listed):  
 
 /var/www/html/infocall/
 ├── app.py
