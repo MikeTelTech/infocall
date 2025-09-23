@@ -1,4 +1,5 @@
 ﻿INFOCALL Flask Application Installation Guide
+ 
 contact: mike@infocall.tel
 
 This guide provides instructions for installing the INFOCALL Flask application on an Ubuntu 22.04 server with Incredible PBX 2027-U. INFOCALL is designed for automated communication campaigns,
